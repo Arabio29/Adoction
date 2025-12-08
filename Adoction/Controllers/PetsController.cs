@@ -1,6 +1,8 @@
+using Adoction.Application.Auth;
 using Adoction.Application.DTOs;
 using Adoction.Application.Services;
 using Adoction.Domains.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Adoction.Controllers;
@@ -17,6 +19,7 @@ public class PetsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = PermissionConstants.PetsRead)]
     public async Task<ActionResult<IEnumerable<PetResponse>>> GetAsync([FromQuery] PetQuery query, CancellationToken cancellationToken)
     {
         var pets = await _petService.SearchAsync(query, cancellationToken);
@@ -24,6 +27,7 @@ public class PetsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Policy = PermissionConstants.PetsRead)]
     public async Task<ActionResult<PetResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var pet = await _petService.GetAsync(id, cancellationToken);
@@ -36,6 +40,7 @@ public class PetsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = PermissionConstants.PetsWrite)]
     public async Task<ActionResult<PetResponse>> CreateAsync([FromBody] CreatePetRequest request, CancellationToken cancellationToken)
     {
         var pet = await _petService.CreateAsync(request, cancellationToken);
@@ -43,6 +48,7 @@ public class PetsController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = PermissionConstants.PetsWrite)]
     public async Task<ActionResult<PetResponse>> UpdateAsync(int id, [FromBody] UpdatePetRequest request, CancellationToken cancellationToken)
     {
         var pet = await _petService.UpdateAsync(id, request, cancellationToken);
@@ -55,6 +61,7 @@ public class PetsController : ControllerBase
     }
 
     [HttpPatch("{id:int}/status")]
+    [Authorize(Policy = PermissionConstants.PetsWrite)]
     public async Task<ActionResult<PetResponse>> UpdateStatusAsync(int id, [FromBody] UpdatePetStatusRequest request, CancellationToken cancellationToken)
     {
         var pet = await _petService.UpdateStatusAsync(id, request, cancellationToken);
@@ -67,6 +74,7 @@ public class PetsController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = PermissionConstants.PetsWrite)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         var deleted = await _petService.DeleteAsync(id, cancellationToken);
