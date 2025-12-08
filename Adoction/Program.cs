@@ -7,6 +7,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSingleton<Adoction.Domains.Interfaces.IPetRepository, Adoction.Infrastructure.Repos.InMemoryPetRepository>();
+builder.Services.AddSingleton<Adoction.Application.Services.IPetService, Adoction.Application.Services.PetService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
