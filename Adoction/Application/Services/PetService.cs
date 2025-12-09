@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Adoction.Application.DTOs;
 using Adoction.Domains.Interfaces;
 using Adoction.Domains.Models;
@@ -15,20 +17,11 @@ public class PetService : IPetService
 
     public async Task<Pet> CreateAsync(CreatePetRequest request, CancellationToken cancellationToken = default)
     {
-        var pet = new Pet
-        {
-            Name = request.Name,
-            Raza = request.Raza,
-            Age = request.Age,
-            Vacunado = request.Vacunado,
-            NombreVacunas = request.NombreVacunas ?? new List<string>(),
-            Esterilizado = request.Esterilizado,
-            CertificadoPedigree = request.CertificadoPedigree,
-            Size = request.Size,
-            Genero = request.Genero,
-            Species = request.Species,
-            ShelterId = request.ShelterId
-        };
+        var pet = new Pet();
+
+        ApplyPetDetails(pet, request);
+        pet.Species = request.Species;
+        pet.ShelterId = request.ShelterId;
 
         await _repository.AddAsync(pet, cancellationToken);
         return pet;
@@ -46,14 +39,15 @@ public class PetService : IPetService
 
     public async Task<IReadOnlyCollection<Pet>> SearchAsync(PetQuery query, CancellationToken cancellationToken = default)
     {
-        var pets = await _repository.GetAllAsync(cancellationToken);
+        var criteria = new PetSearchCriteria
+        {
+            Status = query.Status,
+            Species = query.Species,
+            Gender = query.Gender,
+            Size = query.Size
+        };
 
-        return pets
-            .Where(p => query.Status is null || p.Status == query.Status)
-            .Where(p => query.Species is null || p.Species == query.Species)
-            .Where(p => query.Gender is null || p.Genero == query.Gender)
-            .Where(p => query.Size is null || p.Size == query.Size)
-            .ToList();
+        return await _repository.SearchAsync(criteria, cancellationToken);
     }
 
     public async Task<Pet?> UpdateAsync(int id, UpdatePetRequest request, CancellationToken cancellationToken = default)
@@ -64,15 +58,7 @@ public class PetService : IPetService
             return null;
         }
 
-        pet.Name = request.Name;
-        pet.Raza = request.Raza;
-        pet.Age = request.Age;
-        pet.Vacunado = request.Vacunado;
-        pet.NombreVacunas = request.NombreVacunas ?? new List<string>();
-        pet.Esterilizado = request.Esterilizado;
-        pet.CertificadoPedigree = request.CertificadoPedigree;
-        pet.Size = request.Size;
-        pet.Genero = request.Genero;
+        ApplyPetDetails(pet, request);
         pet.Species = request.Species;
         pet.ShelterId = request.ShelterId;
 
@@ -91,5 +77,31 @@ public class PetService : IPetService
         pet.Status = request.Status;
         await _repository.UpdateAsync(pet, cancellationToken);
         return pet;
+    }
+
+    private static void ApplyPetDetails(Pet pet, CreatePetRequest request)
+    {
+        pet.Name = request.Name;
+        pet.Raza = request.Raza;
+        pet.Age = request.Age;
+        pet.Vacunado = request.Vacunado;
+        pet.NombreVacunas = NormalizeVaccination(request.Vacunado, request.NombreVacunas);
+        pet.Esterilizado = request.Esterilizado;
+        pet.CertificadoPedigree = request.CertificadoPedigree;
+        pet.Size = request.Size;
+        pet.Genero = request.Genero;
+    }
+
+    private static List<string> NormalizeVaccination(bool vacunado, List<string>? nombresVacunas)
+    {
+        if (!vacunado)
+        {
+            return new List<string>();
+        }
+
+        return (nombresVacunas ?? new List<string>())
+            .Where(nombre => !string.IsNullOrWhiteSpace(nombre))
+            .Select(nombre => nombre.Trim())
+            .ToList();
     }
 }

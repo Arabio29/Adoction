@@ -1,6 +1,6 @@
 using Adoction.Application.DTOs;
+using Adoction.Application.Mappers;
 using Adoction.Application.Services;
-using Adoction.Domains.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Adoction.Controllers;
@@ -20,7 +20,7 @@ public class PetsController : ControllerBase
     public async Task<ActionResult<IEnumerable<PetResponse>>> GetAsync([FromQuery] PetQuery query, CancellationToken cancellationToken)
     {
         var pets = await _petService.SearchAsync(query, cancellationToken);
-        return Ok(pets.Select(MapToResponse));
+        return Ok(pets.Select(PetMapper.ToResponse));
     }
 
     [HttpGet("{id:int}")]
@@ -32,14 +32,14 @@ public class PetsController : ControllerBase
             return NotFound();
         }
 
-        return Ok(MapToResponse(pet));
+        return Ok(pet.ToResponse());
     }
 
     [HttpPost]
     public async Task<ActionResult<PetResponse>> CreateAsync([FromBody] CreatePetRequest request, CancellationToken cancellationToken)
     {
         var pet = await _petService.CreateAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = pet.Id }, MapToResponse(pet));
+        return CreatedAtAction(nameof(GetByIdAsync), new { id = pet.Id }, pet.ToResponse());
     }
 
     [HttpPut("{id:int}")]
@@ -51,7 +51,7 @@ public class PetsController : ControllerBase
             return NotFound();
         }
 
-        return Ok(MapToResponse(pet));
+        return Ok(pet.ToResponse());
     }
 
     [HttpPatch("{id:int}/status")]
@@ -63,7 +63,7 @@ public class PetsController : ControllerBase
             return NotFound();
         }
 
-        return Ok(MapToResponse(pet));
+        return Ok(pet.ToResponse());
     }
 
     [HttpDelete("{id:int}")]
@@ -71,25 +71,5 @@ public class PetsController : ControllerBase
     {
         var deleted = await _petService.DeleteAsync(id, cancellationToken);
         return deleted ? NoContent() : NotFound();
-    }
-
-    private static PetResponse MapToResponse(Pet pet)
-    {
-        return new PetResponse
-        {
-            Id = pet.Id,
-            Name = pet.Name,
-            Raza = pet.Raza,
-            Age = pet.Age,
-            Vacunado = pet.Vacunado,
-            NombreVacunas = pet.NombreVacunas,
-            Esterilizado = pet.Esterilizado,
-            CertificadoPedigree = pet.CertificadoPedigree,
-            Size = pet.Size,
-            Genero = pet.Genero,
-            Status = pet.Status,
-            Species = pet.Species,
-            ShelterId = pet.ShelterId
-        };
     }
 }
