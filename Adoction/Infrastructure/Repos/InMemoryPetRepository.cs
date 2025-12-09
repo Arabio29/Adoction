@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Linq;
 using Adoction.Domains.Interfaces;
 using Adoction.Domains.Models;
 
@@ -9,6 +10,19 @@ public class InMemoryPetRepository : IPetRepository
 {
     private readonly ConcurrentDictionary<int, Pet> _pets = new();
     private int _currentId;
+
+    public Task<IReadOnlyCollection<Pet>> SearchAsync(PetSearchCriteria criteria, CancellationToken cancellationToken = default)
+    {
+        var snapshot = _pets.Values
+            .Where(p => criteria.Status is null || p.Status == criteria.Status)
+            .Where(p => criteria.Species is null || p.Species == criteria.Species)
+            .Where(p => criteria.Gender is null || p.Genero == criteria.Gender)
+            .Where(p => criteria.Size is null || p.Size == criteria.Size)
+            .Select(Clone)
+            .ToArray();
+
+        return Task.FromResult<IReadOnlyCollection<Pet>>(snapshot);
+    }
 
     public Task AddAsync(Pet pet, CancellationToken cancellationToken = default)
     {
